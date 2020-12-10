@@ -17,15 +17,17 @@ def main(argv):
     parser.add_argument("-t", "--vaultType", help="type of vault, values can be vault or vaultcore", default='vault')
     parser.add_argument("-i", "--ifile", help="file to import, usually the variables.tf of the role module")
     parser.add_argument("-o", "--ofile", help="file to save, must end in .json")
+    parser.add_argument("-g", "--globalKeyVault", help="endpoint that points to a shared keyvault to also try, in the future will allow a tuple instead")
     args = parser.parse_args()
  
     credential = DefaultAzureCredential()
     keyVaultClient = SecretClient(vault_url="https://{}.{}.azure.net/".format(args.keyVault, args.vaultType), credential=credential)
+    keyVaultGlobalClient = SecretClient(vault_url="https://{}.{}.azure.net/".format(args.globalKeyVault, args.vaultType), credential=credential)
     with open(args.ifile, 'r') as file:
         tfVariablesDictSimple = hcl2.load(file)
     for set in tfVariablesDictSimple['variable']:
         for k in set:
-            tfVariables[k] = retrieveValue(keyVaultClient, k, set)
+            tfVariables[k] = retrieveValue(keyVaultClient, k, set, keyVaultGlobalClient)
         pass
     pass
     with open(args.ofile, 'w') as out:
@@ -51,15 +53,19 @@ def main(argv):
         report.close()
     
 
-def retrieveValue(keyVaultClient, key, set):
+def retrieveValue(keyVaultClient, key, set, keyVaultGlobalClient):
     try:
         secret = keyVaultClient.get_secret(key)
         return secret.value
     except:
         try:
-            return set[key]['default'][0]
+            secret = keyVaultGlobalClient.get_secret(key)
+            return secret.value
         except:
-            return 'NOVALUEFOUND'
+            try:
+                return set[key]['default'][0]
+            except:
+                return 'NOVALUEFOUND'
 
 if __name__ == "__main__":
    main(sys.argv[1:])
