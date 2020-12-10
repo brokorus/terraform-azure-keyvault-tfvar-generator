@@ -1,0 +1,2 @@
+python_hcl2==2.0.0
+azure_storage==0.37.0
