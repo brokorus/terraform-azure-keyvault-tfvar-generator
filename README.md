@@ -17,10 +17,22 @@ Welcome to terraform-azure-keyvault-tfvar-generator 👋
 
 ## Usage
 * Create a vault and insert keys ike described [here](https://docs.microsoft.com/en-us/azure/key-vault/secrets/quick-create-python?tabs=cmd)
-* Authenticate to Azure with a principal that has access to your key vault
-* Create 4 keys named key1, key2, key3, key4 respectively
-* Generate the tfvars json with the following command
+* Authenticate to Azure with a principal that has access to your key vault or use az login
 
+```sh
+export AZURE_CLIENT_ID=<clientid>
+export AZURE_CLIENT_SECRET=<clientsecret>
+export AZURE_TENANT_ID=<clientsecret>
+```
+
+OR login with az ci as a user with access to your key vault
+
+```sh
+az login
+```
+
+* Add 4 keys named key1, key2, key3, key4 respectively
+* Generate the tfvars json with the following command
 
 ```sh
 python3 main.py -i variables.tf -o terraform.tfvars.json -k <mykeyvault>
