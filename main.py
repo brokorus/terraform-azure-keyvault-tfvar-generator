@@ -36,21 +36,20 @@ def main(argv):
 
     for key in tfVariables:
         try:
-            if tfVariables[key] == "NOVALUEFOUND"
-                missingVars.append(tfVariables[key])
-    pass
-    if missingVars:
-        print("All variables found")
-    elif
-        print("The following variables do not have default values, and have not been set in the appropriate keyvault")
-        print(missingVars)
-        print("Go to https://{}.{}.azure.net/ and configure the missing variables there".format(args.keyVault, args.vaultType))
-        sys.exit()
-      
-        
-    with open("{}.report".format(args.ofile), 'w') as report:
-        report.write(json.dumps(tfVariables))
-        report.close()
+            if tfVariables[key] == "NOVALUEFOUND":
+                missingVars.append(key)
+        except:
+            error=0
+    try:
+        if missingVars[0]:
+            print("The following variables do not have default values, and have not been set in the appropriate keyvault")
+            print(missingVars)
+            print("Go to https://{}.{}.azure.net/ and configure the missing variables there".format(args.keyVault, args.vaultType))
+            sys.exit()
+        else:
+            print('All variables found')
+    except:
+        error=0
     
 
 def retrieveValue(keyVaultClient, key, set, keyVaultGlobalClient):
