@@ -27,7 +27,7 @@ def main(argv):
         tfVariablesDictSimple = hcl2.load(file)
     for set in tfVariablesDictSimple['variable']:
         for k in set:
-            tfVariables[k] = retrieveValue(keyVaultClient, k.replace("_", "-"), set, keyVaultGlobalClient)
+            tfVariables[k] = retrieveValue(keyVaultClient, k, set, keyVaultGlobalClient)
         pass
     pass
     with open(args.ofile, 'w') as out:
@@ -54,11 +54,11 @@ def main(argv):
 
 def retrieveValue(keyVaultClient, key, set, keyVaultGlobalClient):
     try:
-        secret = keyVaultClient.get_secret(key)
+        secret = keyVaultClient.get_secret(key.replace("_", "-"))
         return secret.value
     except:
         try:
-            secret = keyVaultGlobalClient.get_secret(key)
+            secret = keyVaultGlobalClient.get_secret(key.replace("_", "-"))
             return secret.value
         except:
             try:
