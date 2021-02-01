@@ -4,12 +4,15 @@ import argparse
 import sys, getopt
 import hcl2
 import json
+import logging
 import datetime
 from azure.identity import DefaultAzureCredential
 from azure.keyvault.secrets import SecretClient
 
 
 def main(argv):
+    logger = logging.getLogger('azure')
+    logger.setLevel(logging.ERROR)
     tfVariables = {}
     missingVars = []
     parser = argparse.ArgumentParser()
@@ -18,11 +21,12 @@ def main(argv):
     parser.add_argument("-i", "--ifile", help="file to import, usually the variables.tf of the role module")
     parser.add_argument("-o", "--ofile", help="file to save, must end in .json")
     parser.add_argument("-g", "--globalKeyVault", help="endpoint that points to a shared keyvault to also try, in the future will allow a tuple instead")
+    parser.add_argument("-a", "--apiEndpoint", help="use azure.net for azure public or usgovcloudapi.net for azure government", default='usgovcloudapi.net')
     args = parser.parse_args()
  
     credential = DefaultAzureCredential()
-    keyVaultClient = SecretClient(vault_url="https://{}.{}.azure.net/".format(args.keyVault, args.vaultType), credential=credential)
-    keyVaultGlobalClient = SecretClient(vault_url="https://{}.{}.azure.net/".format(args.globalKeyVault, args.vaultType), credential=credential)
+    keyVaultClient = SecretClient(vault_url="https://{}.{}.{}/".format(args.keyVault, args.vaultType, args.apiEndpoint), credential=credential)
+    keyVaultGlobalClient = SecretClient(vault_url="https://{}.{}.{}/".format(args.globalKeyVault, args.vaultType, args.apiEndpoint), credential=credential)
     with open(args.ifile, 'r') as file:
         tfVariablesDictSimple = hcl2.load(file)
     for set in tfVariablesDictSimple['variable']:
@@ -41,15 +45,21 @@ def main(argv):
         except:
             error=0
     try:
-        if missingVars[0]:
-            print("The following variables do not have default values, and have not been set in the appropriate keyvault")
-            print(missingVars)
-            print("Go to https://{}.{}.azure.net/ and configure the missing variables there".format(args.keyVault, args.vaultType))
+        if len(missingVars) != 0:
+            print("""
+
+The following variables do not have default values, and have not been set in the appropriate keyvault
+
+{}
+
+Go to https://{}.{}.{}/ and configure the missing variables there
+
+            """.format(missingVars, args.keyVault, args.vaultType, args.apiEndpoint))
             sys.exit()
         else:
             print('All variables found')
-    except:
-        error=0
+    except ValueError:
+        error=1
     
 
 def retrieveValue(keyVaultClient, key, set, keyVaultGlobalClient):
